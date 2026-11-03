@@ -1,23 +1,29 @@
-/**
- * Starter entry point for testing the build setup and source map configuration.
- * Chapter exercises will be implemented step-by-step.
- */
+import * as net from "net";
 
-interface ServerConfig {
-  name: string;
-  version: string;
-  environment: string;
+function newConn(socket: net.Socket): void {
+  console.log("new connection", socket.remoteAddress, socket.remotePort);
+
+  socket.on("end", () => {
+    // FIN received. The connection will be closed automatically.
+    console.log("EOF.");
+  });
+
+  socket.on("data", (data: Buffer) => {
+    console.log("data:", data);
+    socket.write(data); // echo back the data.
+
+    // actively closed the connection if the data contains 'q'
+    if (data.toString().includes("q")) {
+      console.log("closing connection");
+      socket.end(); // this will send FIN and close the connection.
+    }
+  });
 }
 
-const config: ServerConfig = {
-  name: "Build Your Own Web Server from Scratch in Node.js",
-  version: "1.0.0",
-  environment: process.env.NODE_ENV || "development",
-};
+const server: net.Server = net.createServer();
 
-function bootstrap(cfg: ServerConfig): void {
-  console.log(`[setup] ${cfg.name} (v${cfg.version}) initialized in ${cfg.environment} mode.`);
-  console.log("[setup] TypeScript build and source maps are working properly.");
-}
-
-bootstrap(config);
+server.on("error", (err: Error) => {
+  throw err;
+});
+server.on("connection", newConn);
+server.listen({ host: "127.0.0.1", port: 1234 });

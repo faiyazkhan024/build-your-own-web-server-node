@@ -2,9 +2,20 @@ import * as net from "net";
 
 function newConn(socket: net.Socket): void {
   console.log("new connection", socket.remoteAddress, socket.remotePort);
+
+  socket.on("end", () => {
+    // FIN received. The connection will be closed automatically.
+    console.log("EOF.");
+  });
+
+  socket.on("data", (data: Buffer) => {
+    console.log("data:", data);
+    socket.write(data); // echo back the data.
+  });
 }
 
-const server = net.createServer();
+const server: net.Server = net.createServer();
+
 server.on("error", (err: Error) => {
   throw err;
 });

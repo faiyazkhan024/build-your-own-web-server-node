@@ -11,6 +11,12 @@ function newConn(socket: net.Socket): void {
   socket.on("data", (data: Buffer) => {
     console.log("data:", data);
     socket.write(data); // echo back the data.
+
+    // actively closed the connection if the data contains 'q'
+    if (data.toString().includes("q")) {
+      console.log("closing connection");
+      socket.end(); // this will send FIN and close the connection.
+    }
   });
 }
 

@@ -1,0 +1,38 @@
+{
+  "name": "build-your-own-web-server-node",
+  "version": "1.0.0",
+  "description": "Code and exercises from 'Build Your Own Web Server from Scratch in Node.js' by James Smith",
+  "keywords": [
+    "http",
+    "tcp",
+    "web-server",
+    "node",
+    "typescript",
+    "from-scratch"
+  ],
+  "homepage": "https://github.com/faiyazkhan024/build-your-own-web-server-node#readme",
+  "bugs": {
+    "url": "https://github.com/faiyazkhan024/build-your-own-web-server-node/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:faiyazkhan024/build-your-own-web-server-node.git"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Faiyaz Khan",
+    "email": "faiyazkhan024@gmail.com"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "start": "node --enable-source-maps dist/index.js",
+    "test": "echo \"See README.md for manual chapter testing with nc, socat, and curl\" && exit 0"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "^22.13.0",
+    "typescript": "^5.7.3"
+  }
+}

@@ -1,0 +1,12 @@
+title: "Build Your Own Web Server from Scratch in Node.js"
+description: "A hands-on implementation of an HTTP/1.1 and WebSocket server built entirely from scratch in Node.js and TypeScript with zero runtime dependencies."
+theme: jekyll-theme-cayman
+markdown: GFM
+show_downloads: true
+
+github:
+  is_project_page: true
+  repository_url: "https://github.com/faiyazkhan024/build-your-own-web-server-node"
+
+include:
+  - LICENSE

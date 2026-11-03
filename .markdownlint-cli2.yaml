@@ -1,0 +1,4 @@
+ignores:
+  - LICENSE
+  - node_modules
+  - dist

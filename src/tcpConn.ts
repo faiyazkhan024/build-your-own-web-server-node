@@ -58,20 +58,26 @@ export const soRead = (conn: TCPConn): Promise<Buffer> => {
 
   return new Promise((resolve, reject) => {
     // if the connection is not readable, complete the promise now.
-    if (conn.err) {
-      reject(conn.err);
-      return;
-    }
-
-    if (conn.ended) {
-      resolve(Buffer.from("")); // EOF
-      return;
-    }
+    if (conn.err) return reject(conn.err);
+    if (conn.ended) return resolve(Buffer.from("")); // EOF
 
     // save the promise callbacks
     conn.reader = { resolve: resolve, reject: reject };
 
     // and resume the 'data' event to fulfill the promise later.
     conn.socket.resume();
+  });
+};
+
+export const soWrite = (conn: TCPConn, data: Buffer): Promise<void> => {
+  console.assert(data.length > 0);
+
+  return new Promise((resolve, reject) => {
+    if (conn.err) return reject(conn.err);
+
+    conn.socket.write(data, (err?: Error | null) => {
+      if (err) return reject(err);
+      else return resolve();
+    });
   });
 };

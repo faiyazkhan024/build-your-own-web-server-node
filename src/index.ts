@@ -20,7 +20,9 @@ function newConn(socket: net.Socket): void {
   });
 }
 
-const server: net.Server = net.createServer();
+const server: net.Server = net.createServer({
+  pauseOnConnect: true, // required by `TCPConn`
+});
 
 server.on("error", (err: Error) => {
   throw err;

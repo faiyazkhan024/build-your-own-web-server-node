@@ -5,6 +5,12 @@ interface TCPConn {
   // the JS socket object
   socket: net.Socket;
 
+  // from the 'error' event
+  err: null | Error;
+
+  // EOF, from the 'end' event
+  ended: boolean;
+
   // the callbacks of the promise of the current read
   reader: null | {
     resolve: (value: Buffer) => void;
@@ -14,26 +20,54 @@ interface TCPConn {
 
 // create a wrapper from net.Socket
 export const soInit = (socket: net.Socket): TCPConn => {
-  const conn: TCPConn = { socket: socket, reader: null };
+  const conn: TCPConn = {
+    socket: socket,
+    err: null,
+    ended: false,
+    reader: null,
+  };
 
   socket.on("data", (data: Buffer) => {
-    console.assert(conn.reader);
+    // omitted ...
+  });
 
-    // pause the 'data' event until the next read.
-    conn.socket.pause();
+  socket.on("end", () => {
+    // this also fulfills the current read.
+    conn.ended = true;
+    if (conn.reader) {
+      conn.reader.resolve(Buffer.from("")); // EOF
+      conn.reader = null;
+    }
+  });
 
-    // fulfill the promise of the current read.
-    conn.reader!.resolve(data);
-    conn.reader = null;
+  socket.on("error", (err: Error) => {
+    // errors are also delivered to the current read.
+    conn.err = err;
+    if (conn.reader) {
+      conn.reader.reject(err);
+      conn.reader = null;
+    }
   });
 
   return conn;
 };
 
+// returns an empty `Buffer` after EOF.
 export const soRead = (conn: TCPConn): Promise<Buffer> => {
   console.assert(!conn.reader); // no concurrent calls
 
   return new Promise((resolve, reject) => {
+    // if the connection is not readable, complete the promise now.
+    if (conn.err) {
+      reject(conn.err);
+      return;
+    }
+
+    if (conn.ended) {
+      resolve(Buffer.from("")); // EOF
+      return;
+    }
+
     // save the promise callbacks
     conn.reader = { resolve: resolve, reject: reject };
 

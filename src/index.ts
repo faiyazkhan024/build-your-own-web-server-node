@@ -1,29 +1,55 @@
 import * as net from "net";
+import {
+  TCPConn,
+  TCPListener,
+  soListen,
+  soAccept,
+  soInit,
+  soRead,
+  soWrite,
+} from "./tcpConn";
 
-function newConn(socket: net.Socket): void {
-  console.log("new connection", socket.remoteAddress, socket.remotePort);
+// echo server
+async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {
+  const conn: TCPConn =
+    "socket" in socketOrConn ? socketOrConn : soInit(socketOrConn);
 
-  socket.on("end", () => {
-    // FIN received. The connection will be closed automatically.
-    console.log("EOF.");
-  });
+  while (true) {
+    const data = await soRead(conn);
 
-  socket.on("data", (data: Buffer) => {
-    console.log("data:", data);
-    socket.write(data); // echo back the data.
-
-    // actively closed the connection if the data contains 'q'
-    if (data.toString().includes("q")) {
-      console.log("closing connection");
-      socket.end(); // this will send FIN and close the connection.
+    if (data.length === 0) {
+      console.log("end connection");
+      break;
     }
-  });
+
+    console.log("data", data);
+    await soWrite(conn, data);
+  }
 }
 
-const server: net.Server = net.createServer();
+async function newConn(conn: TCPConn): Promise<void> {
+  console.log("new connection", conn.socket.remoteAddress, conn.socket.remotePort);
 
-server.on("error", (err: Error) => {
-  throw err;
+  try {
+    await serveClient(conn);
+  } catch (exc) {
+    console.error("exception:", exc);
+  } finally {
+    conn.socket.destroy();
+  }
+}
+
+async function main(): Promise<void> {
+  const listener: TCPListener = soListen({ host: "127.0.0.1", port: 1234 });
+  console.log("server listening on 127.0.0.1:1234");
+
+  while (true) {
+    const conn: TCPConn = await soAccept(listener);
+    // Start concurrent client task without awaiting it
+    newConn(conn);
+  }
+}
+
+main().catch((err: Error) => {
+  console.error("server error:", err);
 });
-server.on("connection", newConn);
-server.listen({ host: "127.0.0.1", port: 1234 });

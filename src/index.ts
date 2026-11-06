@@ -1,13 +1,6 @@
 import * as net from "net";
-import {
-  TCPConn,
-  TCPListener,
-  soListen,
-  soAccept,
-  soInit,
-  soRead,
-  soWrite,
-} from "./tcpConn";
+import { TCPConn, soInit, soRead, soWrite } from "./tcp-conn";
+import { TCPListener, soListen, soAccept } from "./tcp-listener";
 
 // echo server
 async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {

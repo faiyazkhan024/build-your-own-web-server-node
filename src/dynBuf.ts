@@ -21,7 +21,20 @@ export function bufPush(buf: DynBuf, data: Buffer): void {
   buf.length = newLen;
 }
 
-// split a message delimited by '\n' from DynBuf
+// remove data from the front
+export function bufPop(buf: DynBuf, len: number): void {
+  buf.data.copyWithin(0, len, buf.length);
+  buf.length -= len;
+}
+
 export function cutMessage(buf: DynBuf): null | Buffer {
-  return null;
+  // messages are separated by '\n'
+  const idx = buf.data.subarray(0, buf.length).indexOf("\n");
+  if (idx < 0) {
+    return null; // not complete
+  }
+  // make a copy of the message and move the remaining data to the front
+  const msg = Buffer.from(buf.data.subarray(0, idx + 1));
+  bufPop(buf, idx + 1);
+  return msg;
 }

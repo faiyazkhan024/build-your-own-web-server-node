@@ -23,7 +23,15 @@ async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {
       // got some data, try it again.
       continue;
     }
-    // process the message and send the response...
+    // process the message and send the response
+    if (msg.equals(Buffer.from("quit\n"))) {
+      await soWrite(conn, Buffer.from("Bye.\n"));
+      conn.socket.destroy();
+      return;
+    } else {
+      const reply = Buffer.concat([Buffer.from("Echo:"), msg]);
+      await soWrite(conn, reply);
+    }
   }
 }
 

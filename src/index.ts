@@ -1,14 +1,15 @@
 import * as net from "net";
 import { TCPConn, soInit, soRead, soWrite } from "./tcp-conn";
 import { TCPListener, soListen, soAccept } from "./tcp-listener";
-import { DynBuf, bufPush, cutMessage } from "./dynBuf";
+import { DynBuf, bufPush, createDynBuf } from "./dyn-buf";
+import { cutMessage } from "./message-protocol";
 
 // echo server
 async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {
   const conn: TCPConn =
     "socket" in socketOrConn ? socketOrConn : soInit(socketOrConn);
 
-  const buf: DynBuf = { data: Buffer.alloc(0), length: 0 };
+  const buf: DynBuf = createDynBuf();
   while (true) {
     // try to get 1 message from the buffer
     const msg: null | Buffer = cutMessage(buf);
@@ -23,6 +24,7 @@ async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {
       // got some data, try it again.
       continue;
     }
+
     // process the message and send the response
     if (msg.equals(Buffer.from("quit\n"))) {
       await soWrite(conn, Buffer.from("Bye.\n"));

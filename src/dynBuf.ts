@@ -20,3 +20,8 @@ export function bufPush(buf: DynBuf, data: Buffer): void {
   data.copy(buf.data, buf.length, 0);
   buf.length = newLen;
 }
+
+// split a message delimited by '\n' from DynBuf
+export function cutMessage(buf: DynBuf): null | Buffer {
+  return null;
+}

@@ -1,22 +1,29 @@
 import * as net from "net";
 import { TCPConn, soInit, soRead, soWrite } from "./tcp-conn";
 import { TCPListener, soListen, soAccept } from "./tcp-listener";
+import { DynBuf, bufPush, cutMessage } from "./dynBuf";
 
 // echo server
 async function serveClient(socketOrConn: net.Socket | TCPConn): Promise<void> {
   const conn: TCPConn =
     "socket" in socketOrConn ? socketOrConn : soInit(socketOrConn);
 
+  const buf: DynBuf = { data: Buffer.alloc(0), length: 0 };
   while (true) {
-    const data = await soRead(conn);
-
-    if (data.length === 0) {
-      console.log("end connection");
-      break;
+    // try to get 1 message from the buffer
+    const msg: null | Buffer = cutMessage(buf);
+    if (!msg) {
+      // need more data
+      const data: Buffer = await soRead(conn);
+      bufPush(buf, data);
+      // EOF?
+      if (data.length === 0) {
+        return;
+      }
+      // got some data, try it again.
+      continue;
     }
-
-    console.log("data", data);
-    await soWrite(conn, data);
+    // process the message and send the response...
   }
 }
 

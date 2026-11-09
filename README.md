@@ -111,10 +111,10 @@ The following diagram outlines the layered architecture constructed throughout t
 | Chapter | Title                         | Key Technical Concepts                                    | Status |
 | :-----: | :---------------------------- | :-------------------------------------------------------- | :----: |
 |   01    | Introduction                  | Project philosophy, book outline, zero-dependency setup   |  Done  |
-|   02    | HTTP Overview                 | Protocol evolution, request/response cycle, CLI tools     | Ready  |
-|   03    | Code A TCP Server             | Raw socket handles, listen/accept, byte stream vs packets | Ready  |
-|   04    | Promises and Events           | Wrapping socket events into `async`/`await`, backpressure | Ready  |
-|   05    | A Simple Network Protocol     | Dynamic buffers, length-prefixed messages, pipelining     | Ready  |
+|   02    | HTTP Overview                 | Protocol evolution, request/response cycle, CLI tools     |  Done  |
+|   03    | Code A TCP Server             | Raw socket handles, listen/accept, byte stream vs packets |  Done  |
+|   04    | Promises and Events           | Wrapping socket events into `async`/`await`, backpressure |  Done  |
+|   05    | A Simple Network Protocol     | Dynamic buffers, length-prefixed messages, pipelining     |  Done  |
 |   06    | HTTP Semantics and Syntax     | HTTP/1.1 grammar, CRLF delimiters, header rules           | Ready  |
 |   07    | Code A Basic HTTP Server      | Request parsing, response dispatching, BufferedWriter     | Ready  |
 |   08    | Dynamic Content and Streaming | Chunked transfer encoding, JavaScript async generators    | Ready  |

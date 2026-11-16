@@ -2,6 +2,7 @@ import { TCPConn, soRead } from "../tcp-conn";
 import { DynBuf, bufPush, bufPop } from "../dyn-buf";
 import { HTTPError, HTTPReq, BodyReader, BufferGenerator } from "./types";
 import { fieldGet, parseDec } from "./syntax";
+import { readChunks } from "./chunked";
 
 // BodyReader from in-memory data
 export function readerFromMemory(data: Buffer): BodyReader {
@@ -14,6 +15,22 @@ export function readerFromMemory(data: Buffer): BodyReader {
       } else {
         done = true;
         return data;
+      }
+    },
+  };
+}
+
+// BodyReader from an AsyncGenerator
+export function readerFromGenerator(gen: BufferGenerator): BodyReader {
+  return {
+    length: -1,
+    read: async (): Promise<Buffer> => {
+      const r = await gen.next();
+      if (r.done) {
+        return Buffer.from(""); // EOF
+      } else {
+        console.assert(r.value && r.value.length > 0);
+        return r.value;
       }
     },
   };
@@ -50,6 +67,21 @@ export function readerFromConnLength(
   };
 }
 
+// BodyReader from socket until EOF (HTTP/1.0 compatibility)
+export function readerFromConnEOF(conn: TCPConn, buf: DynBuf): BodyReader {
+  return {
+    length: -1,
+    read: async (): Promise<Buffer> => {
+      if (buf.length > 0) {
+        const data = Buffer.from(buf.data.subarray(0, buf.length));
+        bufPop(buf, buf.length);
+        return data;
+      }
+      return await soRead(conn);
+    },
+  };
+}
+
 // BodyReader from an HTTP request
 export function readerFromReq(
   conn: TCPConn,
@@ -82,25 +114,9 @@ export function readerFromReq(
     return readerFromConnLength(conn, buf, bodyLen);
   } else if (chunked) {
     // chunked encoding
-    throw new HTTPError(501, "TODO: chunked encoding");
+    return readerFromGenerator(readChunks(conn, buf));
   } else {
-    // read the rest of the connection
-    throw new HTTPError(501, "TODO: read to EOF");
+    // read the rest of the connection (HTTP/1.0 close delimited)
+    return readerFromConnEOF(conn, buf);
   }
-}
-
-// BodyReader from an AsyncGenerator
-export function readerFromGenerator(gen: BufferGenerator): BodyReader {
-  return {
-    length: -1,
-    read: async (): Promise<Buffer> => {
-      const r = await gen.next();
-      if (r.done) {
-        return Buffer.from(""); // EOF
-      } else {
-        console.assert(r.value && r.value.length > 0);
-        return r.value;
-      }
-    },
-  };
 }

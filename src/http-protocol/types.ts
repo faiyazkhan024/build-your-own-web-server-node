@@ -16,6 +16,9 @@ export type BodyReader = {
   read: () => Promise<Buffer>;
 };
 
+// Async generator type for byte buffers
+export type BufferGenerator = AsyncGenerator<Buffer, void, void>;
+
 // a parsed HTTP request header
 export type HTTPReq = {
   method: string;

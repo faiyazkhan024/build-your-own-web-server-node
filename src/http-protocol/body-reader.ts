@@ -1,6 +1,6 @@
 import { TCPConn, soRead } from "../tcp-conn";
 import { DynBuf, bufPush, bufPop } from "../dyn-buf";
-import { HTTPError, HTTPReq, BodyReader } from "./types";
+import { HTTPError, HTTPReq, BodyReader, BufferGenerator } from "./types";
 import { fieldGet, parseDec } from "./syntax";
 
 // BodyReader from in-memory data
@@ -87,4 +87,20 @@ export function readerFromReq(
     // read the rest of the connection
     throw new HTTPError(501, "TODO: read to EOF");
   }
+}
+
+// BodyReader from an AsyncGenerator
+export function readerFromGenerator(gen: BufferGenerator): BodyReader {
+  return {
+    length: -1,
+    read: async (): Promise<Buffer> => {
+      const r = await gen.next();
+      if (r.done) {
+        return Buffer.from(""); // EOF
+      } else {
+        console.assert(r.value && r.value.length > 0);
+        return r.value;
+      }
+    },
+  };
 }

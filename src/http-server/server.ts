@@ -11,6 +11,8 @@ import {
   readerFromReq,
   readerFromMemory,
   writeHTTPResp,
+  writeHTTPHeader,
+  writeHTTPBody,
 } from "../http-protocol";
 import { handleReq } from "./handler";
 
@@ -43,7 +45,10 @@ export async function serveClient(
     const reqBody: BodyReader = readerFromReq(conn, buf, msg);
     const res: HTTPRes = await handler(msg, reqBody);
     try {
-      await writeHTTPResp(conn, res);
+      await writeHTTPHeader(conn, res);
+      if (msg.method !== "HEAD") {
+        await writeHTTPBody(conn, res.body);
+      }
     } finally {
       await res.body.close?.(); // cleanups
     }

@@ -1,5 +1,5 @@
 import { TCPConn, soWrite } from "../tcp-conn";
-import { HTTPRes, HTTP_STATUS_TEXT } from "./types";
+import { HTTPRes, BodyReader, HTTP_STATUS_TEXT } from "./types";
 import { fieldGet } from "./syntax";
 
 // Encode an HTTP response header into a byte buffer
@@ -16,8 +16,8 @@ export function encodeHTTPResp(resp: HTTPRes): Buffer {
   return Buffer.concat(lines);
 }
 
-// Send an HTTP response through the socket
-export async function writeHTTPResp(
+// Write the HTTP response header to the connection
+export async function writeHTTPHeader(
   conn: TCPConn,
   resp: HTTPRes
 ): Promise<void> {
@@ -34,13 +34,18 @@ export async function writeHTTPResp(
 
   // write the header (combined write to avoid Nagle delays)
   await soWrite(conn, encodeHTTPResp(resp));
+}
 
-  // write the body
+// Write the HTTP response body to the connection
+export async function writeHTTPBody(
+  conn: TCPConn,
+  body: BodyReader
+): Promise<void> {
   const crlf = Buffer.from("\r\n");
   for (let last = false; !last; ) {
-    let data = await resp.body.read();
+    let data = await body.read();
     last = data.length === 0; // ended?
-    if (resp.body.length < 0) {
+    if (body.length < 0) {
       // chunked encoding
       data = Buffer.concat([
         Buffer.from(data.length.toString(16)),
@@ -53,4 +58,13 @@ export async function writeHTTPResp(
       await soWrite(conn, data);
     }
   }
+}
+
+// Send an entire HTTP response through the socket
+export async function writeHTTPResp(
+  conn: TCPConn,
+  resp: HTTPRes
+): Promise<void> {
+  await writeHTTPHeader(conn, resp);
+  await writeHTTPBody(conn, resp.body);
 }

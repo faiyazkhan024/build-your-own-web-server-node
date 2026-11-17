@@ -118,7 +118,7 @@ The following diagram outlines the layered architecture constructed throughout t
 |   06    | HTTP Semantics and Syntax     | HTTP/1.1 grammar, CRLF delimiters, header rules           |  Done  |
 |   07    | Code A Basic HTTP Server      | Request parsing, response dispatching, BufferedWriter     |  Done  |
 |   08    | Dynamic Content and Streaming | Chunked transfer encoding, JavaScript async generators    |  Done  |
-|   09    | File IO & Resource Management | Safe file reads, MIME types, preventing descriptor leaks  | Ready  |
+|   09    | File IO & Resource Management | Safe file reads, MIME types, preventing descriptor leaks  |  Done  |
 |   10    | Range Requests                | Byte ranges (`206 Partial Content`), multi-range parsing  | Ready  |
 |   11    | HTTP Caching                  | Conditional requests, `ETag`, `If-Modified-Since`, `304`  | Ready  |
 |   12    | Compression & Stream API      | Gzip/deflate pipeline, Transform streams, highWaterMark   | Ready  |

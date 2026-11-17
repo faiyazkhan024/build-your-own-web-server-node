@@ -27,7 +27,7 @@ export async function handleReq(
   if (uri.startsWith("/files/")) {
     // Serve static disk files from the project workspace
     const relPath = uri.substring("/files/".length);
-    return await serveStaticFile(relPath);
+    return await serveStaticFile(req, relPath);
   }
 
   let resp: BodyReader;

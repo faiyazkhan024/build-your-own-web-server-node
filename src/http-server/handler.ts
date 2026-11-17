@@ -6,6 +6,7 @@ import {
   readerFromMemory,
   readerFromGenerator,
 } from "../http-protocol";
+import { serveStaticFile } from "../static-files";
 
 // Sample generator: count to 10
 export async function* countSheep(max: number = 10): BufferGenerator {
@@ -21,10 +22,16 @@ export async function handleReq(
   req: HTTPReq,
   body: BodyReader
 ): Promise<HTTPRes> {
-  let resp: BodyReader;
-  const path = req.uri.toString("latin1");
+  const uri = req.uri.toString("latin1");
 
-  switch (path) {
+  if (uri.startsWith("/files/")) {
+    // Serve static disk files from the project workspace
+    const relPath = uri.substring("/files/".length);
+    return await serveStaticFile(relPath);
+  }
+
+  let resp: BodyReader;
+  switch (uri) {
     case "/echo":
       // HTTP echo endpoint
       resp = body;

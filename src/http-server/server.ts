@@ -42,7 +42,11 @@ export async function serveClient(
     // process the message and send the response
     const reqBody: BodyReader = readerFromReq(conn, buf, msg);
     const res: HTTPRes = await handler(msg, reqBody);
-    await writeHTTPResp(conn, res);
+    try {
+      await writeHTTPResp(conn, res);
+    } finally {
+      await res.body.close?.(); // cleanups
+    }
 
     // close the connection for HTTP/1.0
     if (msg.version === "1.0") {

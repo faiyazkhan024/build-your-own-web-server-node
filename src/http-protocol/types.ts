@@ -14,6 +14,8 @@ export type BodyReader = {
   length: number;
   // read data. returns an empty buffer after EOF.
   read: () => Promise<Buffer>;
+  // optional cleanups
+  close?: () => Promise<void>;
 };
 
 // Async generator type for byte buffers

@@ -33,6 +33,10 @@ export function readerFromGenerator(gen: BufferGenerator): BodyReader {
         return r.value;
       }
     },
+    close: async (): Promise<void> => {
+      // force generator to return so finally blocks execute
+      await gen.return();
+    },
   };
 }
 

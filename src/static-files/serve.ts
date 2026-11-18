@@ -1,4 +1,5 @@
 import * as fs from "fs/promises";
+import type { Stats } from "fs";
 import * as path from "path";
 import {
   HTTPReq,
@@ -6,6 +7,7 @@ import {
   BodyReader,
   readerFromMemory,
   fieldGet,
+  parseHTTPDate,
 } from "../http-protocol";
 import { getMimeType } from "./mime";
 import { parseBytesRanges, computeEffectiveRange } from "./range";
@@ -59,27 +61,55 @@ export function readerFromStaticFile(
   };
 }
 
-// Generate full or partial range response for an opened static file
+// Generate full or partial range response with HTTP caching validators
 export function staticFileResp(
   req: HTTPReq,
   fp: fs.FileHandle,
-  size: number,
+  stat: Stats,
   safePath: string
 ): HTTPRes {
   const mime = getMimeType(safePath);
-  const rangeHeader = fieldGet(req.headers, "Range");
+  const ts = Math.floor(stat.mtime.getTime() / 1000); // Unix timestamp in seconds
+
+  const commonHeaders: Buffer[] = [
+    Buffer.from(`Content-Type: ${mime}`),
+    Buffer.from("Accept-Ranges: bytes"),
+    Buffer.from(`Last-Modified: ${stat.mtime.toUTCString()}`),
+    Buffer.from("Cache-Control: public, max-age=3600"),
+  ];
+
+  // 1. Check If-Modified-Since for conditional cache validation
+  const ifm = fieldGet(req.headers, "If-Modified-Since");
+  if (ifm && parseHTTPDate(ifm.toString("latin1")) === ts) {
+    const empty = readerFromMemory(Buffer.from(""));
+    return {
+      code: 304,
+      headers: [
+        Buffer.from(`Last-Modified: ${stat.mtime.toUTCString()}`),
+        Buffer.from("Cache-Control: public, max-age=3600"),
+      ],
+      body: empty,
+    };
+  }
+
+  // 2. Check If-Range validator for range requests
+  let rangeHeader = fieldGet(req.headers, "Range");
+  const ifr = fieldGet(req.headers, "If-Range");
+  if (ifr && parseHTTPDate(ifr.toString("latin1")) !== ts) {
+    rangeHeader = null; // Ignore Range header if If-Range timestamp does not match
+  }
 
   if (rangeHeader) {
     const ranges = parseBytesRanges(rangeHeader);
     if (ranges.length > 0) {
-      const eff = computeEffectiveRange(ranges[0], size);
+      const eff = computeEffectiveRange(ranges[0], stat.size);
       if (!eff) {
         // Range Not Satisfiable
         return {
           code: 416,
           headers: [
             Buffer.from("Content-Type: text/plain; charset=utf-8"),
-            Buffer.from(`Content-Range: bytes */${size}`),
+            Buffer.from(`Content-Range: bytes */${stat.size}`),
           ],
           body: readerFromMemory(Buffer.from("Range Not Satisfiable\n")),
         };
@@ -91,9 +121,8 @@ export function staticFileResp(
       return {
         code: 206,
         headers: [
-          Buffer.from(`Content-Type: ${mime}`),
-          Buffer.from("Accept-Ranges: bytes"),
-          Buffer.from(`Content-Range: bytes ${start}-${end - 1}/${size}`),
+          ...commonHeaders,
+          Buffer.from(`Content-Range: bytes ${start}-${end - 1}/${stat.size}`),
         ],
         body: reader,
       };
@@ -101,13 +130,10 @@ export function staticFileResp(
   }
 
   // 200 OK full file response
-  const reader = readerFromStaticFile(fp, 0, size);
+  const reader = readerFromStaticFile(fp, 0, stat.size);
   return {
     code: 200,
-    headers: [
-      Buffer.from(`Content-Type: ${mime}`),
-      Buffer.from("Accept-Ranges: bytes"),
-    ],
+    headers: commonHeaders,
     body: reader,
   };
 }
@@ -137,9 +163,8 @@ export async function serveStaticFile(
       return resp404();
     }
 
-    const size = stat.size;
     try {
-      return staticFileResp(req, fp, size, safePath);
+      return staticFileResp(req, fp, stat, safePath);
     } finally {
       // Ownership transferred to BodyReader in staticFileResp
       fp = null;

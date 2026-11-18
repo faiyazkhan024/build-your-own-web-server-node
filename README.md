@@ -121,7 +121,7 @@ The following diagram outlines the layered architecture constructed throughout t
 |   09    | File IO & Resource Management | Safe file reads, MIME types, preventing descriptor leaks  |  Done  |
 |   10    | Range Requests                | Byte ranges (`206 Partial Content`), multi-range parsing  |  Done  |
 |   11    | HTTP Caching                  | Conditional requests, `ETag`, `If-Modified-Since`, `304`  |  Done  |
-|   12    | Compression & Stream API      | Gzip/deflate pipeline, Transform streams, highWaterMark   | Ready  |
+|   12    | Compression & Stream API      | Gzip/deflate pipeline, Transform streams, highWaterMark   |  Done  |
 |   13    | WebSocket & Concurrency       | HTTP upgrade handshake, frame decoding, blocking queue    | Ready  |
 
 [↑ Back to top](#table-of-contents)

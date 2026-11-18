@@ -104,3 +104,17 @@ export function parseHTTPDate(dateStr: string): number {
   }
   return Math.floor(ms / 1000);
 }
+
+// Split comma-separated header values into string array
+export function fieldGetList(headers: Buffer[], key: string): string[] {
+  const val = fieldGet(headers, key);
+  if (!val) return [];
+  return val
+    .toString("latin1")
+    .split(",")
+    .map((item) => {
+      const semi = item.indexOf(";");
+      return (semi >= 0 ? item.substring(0, semi) : item).trim().toLowerCase();
+    })
+    .filter((s) => s.length > 0);
+}

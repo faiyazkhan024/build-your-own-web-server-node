@@ -95,3 +95,12 @@ export function parseDec(s: string): number {
   }
   return parseInt(s.trim(), 10);
 }
+
+// Parse HTTP date string (IMF-fixdate / RFC 9110) into Unix seconds
+export function parseHTTPDate(dateStr: string): number {
+  const ms = Date.parse(dateStr.trim());
+  if (isNaN(ms)) {
+    return -1;
+  }
+  return Math.floor(ms / 1000);
+}

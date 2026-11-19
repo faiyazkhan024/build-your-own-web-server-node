@@ -10,11 +10,13 @@ import {
   cutHTTPReq,
   readerFromReq,
   readerFromMemory,
+  readerFromConnEOF,
   writeHTTPResp,
   writeHTTPHeader,
   writeHTTPBody,
 } from "../http-protocol";
 import { enableCompression } from "../compression";
+import { getWSApp, handleWS } from "../websocket";
 import { handleReq } from "./handler";
 
 // HTTP client connection loop
@@ -42,21 +44,33 @@ export async function serveClient(
       continue;
     }
 
-    // process the message and send the response
-    const reqBody: BodyReader = readerFromReq(conn, buf, msg);
-    const res: HTTPRes = await handler(msg, reqBody);
+    // WebSocket upgrade check
+    const wsapp = getWSApp(msg);
+    let reqBody: BodyReader;
+    let res: HTTPRes;
+
+    if (wsapp) {
+      reqBody = readerFromConnEOF(conn, buf);
+      res = await handleWS(msg, reqBody, wsapp);
+    } else {
+      reqBody = readerFromReq(conn, buf, msg);
+      res = await handler(msg, reqBody);
+    }
+
     try {
-      enableCompression(msg, res);
+      if (!wsapp) {
+        enableCompression(msg, res);
+      }
       await writeHTTPHeader(conn, res);
       if (msg.method !== "HEAD") {
-        await writeHTTPBody(conn, res.body);
+        await writeHTTPBody(conn, res.body, !!wsapp);
       }
     } finally {
       await res.body.close?.(); // cleanups
     }
 
-    // close the connection for HTTP/1.0
-    if (msg.version === "1.0") {
+    // close the connection for HTTP/1.0 or WebSocket upgrades
+    if (msg.version === "1.0" || wsapp) {
       return;
     }
 

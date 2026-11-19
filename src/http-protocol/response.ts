@@ -21,6 +21,12 @@ export async function writeHTTPHeader(
   conn: TCPConn,
   resp: HTTPRes
 ): Promise<void> {
+  // 101 Switching Protocols (e.g. WebSocket upgrade) does not use Content-Length or Transfer-Encoding
+  if (resp.code === 101) {
+    await soWrite(conn, encodeHTTPResp(resp));
+    return;
+  }
+
   // set the "Content-Length" or "Transfer-Encoding" field
   if (resp.body.length < 0) {
     if (!fieldGet(resp.headers, "Transfer-Encoding")) {
@@ -39,13 +45,14 @@ export async function writeHTTPHeader(
 // Write the HTTP response body to the connection
 export async function writeHTTPBody(
   conn: TCPConn,
-  body: BodyReader
+  body: BodyReader,
+  raw: boolean = false
 ): Promise<void> {
   const crlf = Buffer.from("\r\n");
   for (let last = false; !last; ) {
     let data = await body.read();
     last = data.length === 0; // ended?
-    if (body.length < 0) {
+    if (!raw && body.length < 0) {
       // chunked encoding
       data = Buffer.concat([
         Buffer.from(data.length.toString(16)),

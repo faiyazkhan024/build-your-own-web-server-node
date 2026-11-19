@@ -38,6 +38,7 @@ export type HTTPRes = {
 
 // Standard HTTP status reasons
 export const HTTP_STATUS_TEXT: Record<number, string> = {
+  101: "Switching Protocols",
   200: "OK",
   204: "No Content",
   206: "Partial Content",
